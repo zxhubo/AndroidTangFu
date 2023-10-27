@@ -25,6 +25,10 @@ import java.util.Date;
  */
 public class ScreenRecordService extends Service {
 
+    private final String NOTIFICATION_CHANNEL_ID="com.tencent.trtc.apiexample.MediaService";
+    private final String NOTIFICATION_CHANNEL_NAME="com.tencent.trtc.apiexample.channel_name";
+    private final String NOTIFICATION_CHANNEL_DESC="com.tencent.trtc.apiexample.channel_desc";
+
     private final String TAG = "ScreenRecordService";
 
     /**
@@ -55,6 +59,7 @@ public class ScreenRecordService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        startNotification();
     }
 
     @Override
@@ -150,6 +155,27 @@ public class ScreenRecordService extends Service {
         Log.i(TAG, "Create VirtualDisplay");
         return mMediaProjection.createVirtualDisplay(TAG, mScreenWidth, mScreenHeight, mScreenDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, mMediaRecorder.getSurface(), null, null);
+    }
+
+
+    public void startNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            //Call Start foreground with notification
+            Intent notificationIntent = new Intent(this, ScreenRecordService.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                    .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_foreground))
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle("Starting Service")
+                    .setContentText("Starting monitoring service")
+                    .setContentIntent(pendingIntent);
+            Notification notification = notificationBuilder.build();
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription(NOTIFICATION_CHANNEL_DESC);
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+            startForeground(1, notification); //必须使用此方法显示通知，不能使用notificationManager.notify，否则还是会报上面的错误
+        }
     }
 
 
